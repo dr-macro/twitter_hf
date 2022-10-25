@@ -132,6 +132,6 @@ class Scraper:
             aws_secret_access_key=access_key
         )
         client_s3.upload_file(Filename=file_name,
-            Bucket='mathieu-data',
+            Bucket='hf-sentiment-macro',
             Key=file_name
         )
