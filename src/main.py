@@ -151,8 +151,8 @@ try:
 except:
     print("Client error, check your bearer token or tweepy documentation")
 
-def create_time_range()-> tuple[datetime.datetime, datetime.datetime]:
-    current = datetime.datetime.now() - datetime.timedelta(hours=1)
+def create_time_range():
+    current = datetime.datetime.now() - datetime.timedelta(days=1)
     start_date = datetime.datetime(
         year=current.year,
         month=current.month,
@@ -160,26 +160,48 @@ def create_time_range()-> tuple[datetime.datetime, datetime.datetime]:
         hour=current.hour,
         minute=0
     )
-    end_date = start_date + datetime.timedelta(hours=1)
+    end_date = start_date + datetime.timedelta(hours=24)
     return start_date, end_date
 
 start_date, end_date = create_time_range()
-filename = "twitter_{}_to_{}.parquet".format(start_date, end_date)
-
 
 A = Scraper(
     twitter_account=twitter_account,
     client=client
 )
 
-raw_data = A.get_tweets(start_date=start_date, end_date=end_date)
-df = A.transform_data(raw_data)
-df.to_parquet(filename)
-A.export_data(
-    key_id=AWS_ACCESS_KEY_ID,
-    access_key=AWS_SECRET_ACCESS_KEY,
-    file_name=filename
-)
+df2 = pd.read_csv("data/user_ID_by_country.csv")
+countries_of_interest = ['United States', 'United Kingdom', 'European Parliament', 'France', 'Germany', 'Australia', 'Turkey']
+tweets_by_country = {}
+for country in countries_of_interest:
+    accounts_of_interest = list(df2[df2['Country']==country]['user_id'].unique())
+    
+    print(country)
+    data = A._get_tweets_from_ids(client, accounts_of_interest, start_date, end_date)
+    
+    df_data = A._transform_data(data)
+    
+    tweets_by_country[country] = df_data
+    
+    localtime = time.localtime()
+    result = time.strftime("%I:%M:%S %p", localtime)
+    print(result)
+    
+    if country != countries_of_interest[-1]:
+        print('Wait 15 minutes before next wave of requests')
+        time.sleep(900)
+       
 
-
+for k in tweets_by_country.keys():
+    filename = "{}_{}_to_{}.parquet".format(k, start_date, end_date).replace(':', '-') #Having ":" in filenames creates problems for AWS
+    
+    df_country = tweets_by_country[k]
+    df_country.to_parquet(filename)
+    A.export_data(
+        key_id=AWS_ACCESS_KEY_ID,
+        access_key=AWS_SECRET_ACCESS_KEY,
+        file_name=filename
+    )
+    
+  
 
