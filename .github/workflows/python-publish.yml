@@ -5,7 +5,7 @@ name: Python application
 
 on:
   schedule:
-    - cron: "50 11 * * *" # daily at 5am
+    - cron: "00 15 * * *" # daily at 5am
   push:
     branches:
       - main  # Set a branch to deploy
