@@ -51,7 +51,7 @@ class Scraper:
             request = client.get_users_tweets(
                 id=x,
                 max_results=100,
-                tweet_fields=["created_at","author_id","public_metrics","referenced_tweets","entities", "in_reply_to_user_id"] #retweet IDs can be gotten from referenced tweets
+                tweet_fields=["created_at","author_id","public_metrics","referenced_tweets","entities", "in_reply_to_user_id"], #retweet IDs can be gotten from referenced tweets
                 start_time=start_date.isoformat("T")+"Z",
                 end_time=end_date.isoformat("T")+"Z"
             )
