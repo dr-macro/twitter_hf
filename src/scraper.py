@@ -5,7 +5,6 @@ import datetime
 import json
 import boto3
 
-
 class Scraper:
     def __init__(self, twitter_account: Any, client: Any):
         self.client = client
@@ -21,7 +20,7 @@ class Scraper:
         with open(file, "r") as fi:
             d = json.loads(fi.read())
         return d
-
+    
     @staticmethod
     def _from_ids_to_name(client: Any, l_account: List)-> Dict:
         d = {}
@@ -29,7 +28,13 @@ class Scraper:
             l_account = [l_account[i:i +100] for i in range(0, len(l_account), 100)]
             for unames in l_account:
                 users = client.get_users(usernames=unames)
-                ids = [x.id for x in users.data]
+                ids = []
+                for x in users.data:
+                    if type(x.data) != 'NoneType':
+                        ids.append(x.id)
+                else:
+                    ids.append('NoneType')
+                
                 for id, name in zip(ids, unames):
                     d[name] = id
         else:
@@ -46,7 +51,7 @@ class Scraper:
             request = client.get_users_tweets(
                 id=x,
                 max_results=100,
-                tweet_fields=["created_at","author_id","public_metrics","referenced_tweets","entities"],
+                tweet_fields=["created_at","author_id","public_metrics","referenced_tweets","entities", "in_reply_to_user_id"] #retweet IDs can be gotten from referenced tweets
                 start_time=start_date.isoformat("T")+"Z",
                 end_time=end_date.isoformat("T")+"Z"
             )
@@ -68,6 +73,8 @@ class Scraper:
             l_count_like = []
             l_type = [] #case retweet or normal tweet
             l_entities = []
+            l_in_reply_to_user_id = []
+            referenced_tweets = []
             for x in data:
                 l_created.append(x["created_at"])
                 l_id_tweet.append(x["id"])
@@ -78,9 +85,14 @@ class Scraper:
                 l_count_like.append(x["public_metrics"]["like_count"])
                 if x["referenced_tweets"] != None:
                     l_type.append(x["referenced_tweets"][0]["type"])
+                    referenced_tweets.append(x["referenced_tweets"][0]['id'])
                 else:
                     l_type.append("tweet")
+                    referenced_tweets.append(None)
                 l_entities.append(x["entities"])
+                l_in_reply_to_user_id.append(x["in_reply_to_user_id"])
+                
+                
             df = pd.DataFrame(data={
                 "created_at": l_created,
                 "id_tweet": l_id_tweet,
@@ -90,7 +102,9 @@ class Scraper:
                 "count_rep": l_count_rep,
                 "count_like": l_count_like,
                 "type": l_type,
-                "entities": l_entities
+                "entities": l_entities,
+                "in_reply_to_user_id": l_in_reply_to_user_id,
+                "referenced_tweets": referenced_tweets
             })
         else:
             print("empty raw_data")
