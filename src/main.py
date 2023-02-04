@@ -146,10 +146,6 @@ twitter_account = ['pmje73',
 
 #time.sleep(60)
 
-try:
-    client = tweepy.Client(bearer_token=BEARER_TOKEN)
-except:
-    print("Client error, check your bearer token or tweepy documentation")
 
 def create_time_range():
     current = datetime.datetime.now() - datetime.timedelta(days=1)
@@ -165,15 +161,21 @@ def create_time_range():
 
 start_date, end_date = create_time_range()
 
-A = Scraper(
-    twitter_account=twitter_account,
-    client=client
-)
+
 
 df2 = pd.read_csv("data/user_ID_by_country.csv")
 countries_of_interest = ['United States', 'United Kingdom', 'European Parliament', 'France', 'Germany', 'Australia', 'Turkey']
 tweets_by_country = {}
 for country in countries_of_interest:
+    try:
+        client = tweepy.Client(bearer_token=BEARER_TOKEN)
+    except:
+        print("Client error, check your bearer token or tweepy documentation")
+      
+    A = Scraper(
+        twitter_account=twitter_account,
+        client=client
+    )
     accounts_of_interest = list(df2[df2['Country']==country]['user_id'].unique())
     
     print(country)
